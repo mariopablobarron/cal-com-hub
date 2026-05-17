@@ -1,0 +1,23 @@
+.env.example
+  s_f12e84bac900e4::t_10a08dcb621fc8 1-17
+README.md
+  s_f12e84bac900e4::t_10a08dcb621fc8 1-136
+docker-compose.yml
+  s_f12e84bac900e4::t_10a08dcb621fc8 1-88
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "68522a20056786e0484467a21d864316f38072da",
+  "prompts": {},
+  "sessions": {
+    "s_f12e84bac900e4": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ba62ea7a-a471-4585-b822-8ababb0c1519",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "mariopablobarron <mariopablobarron@users.noreply.github.com>"
+    }
+  }
+}
