@@ -1,0 +1,19 @@
+docker-compose.yml
+  s_f12e84bac900e4::t_e21f740d98baa2 35-36,38
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "1ae8d15b18a08ac7ad1ebf2c8d624d68668c337e",
+  "prompts": {},
+  "sessions": {
+    "s_f12e84bac900e4": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ba62ea7a-a471-4585-b822-8ababb0c1519",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "mariopablobarron <mariopablobarron@users.noreply.github.com>"
+    }
+  }
+}
