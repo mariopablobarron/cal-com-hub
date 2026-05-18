@@ -32,8 +32,10 @@ services:
       cal-redis:
         condition: service_started
     restart: unless-stopped
+    # Cal.com v6.2.0 NO tiene /api/health endpoint (404). Usamos / (root)
+    # que devuelve 200 cuando Next.js está sirviendo.
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/api/health"]
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/"]
       interval: 30s
       timeout: 10s
       retries: 5
