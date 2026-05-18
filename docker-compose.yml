@@ -9,6 +9,25 @@
 services:
   cal-web:
     image: calcom/cal.com:v6.2.0
+    # Labels Traefik — Coolify v3 con docker-compose NO genera labels
+    # automáticamente, hay que ponerlas manualmente. Patrón copiado de
+    # otras apps del VPS que funcionan (startidea-merch).
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=coolify"
+      # HTTPS principal
+      - "traefik.http.routers.cal-web.rule=Host(`cal.hubstartidea.es`)"
+      - "traefik.http.routers.cal-web.entrypoints=websecure"
+      - "traefik.http.routers.cal-web.tls=true"
+      - "traefik.http.routers.cal-web.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.cal-web.service=cal-web"
+      - "traefik.http.services.cal-web.loadbalancer.server.port=3000"
+      # HTTP → redirect a HTTPS
+      - "traefik.http.middlewares.cal-web-redirect.redirectscheme.scheme=https"
+      - "traefik.http.middlewares.cal-web-redirect.redirectscheme.permanent=true"
+      - "traefik.http.routers.cal-web-http.rule=Host(`cal.hubstartidea.es`)"
+      - "traefik.http.routers.cal-web-http.entrypoints=web"
+      - "traefik.http.routers.cal-web-http.middlewares=cal-web-redirect"
     environment:
       DATABASE_URL: ${DATABASE_URL}
       DATABASE_DIRECT_URL: ${DATABASE_DIRECT_URL}
