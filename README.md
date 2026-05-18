@@ -1,18 +1,44 @@
 # Cal.com self-hosted — HUB Startidea
 
-Fase 0 de la migración: Cal.com vivo en `cal.hubstartidea.es`, sin tocar
-la web actual (`hubstartidea.es`).
+Fase 0 de la migración: Cal.com **LIVE 2026-05-18** en `cal.hubstartidea.es`.
+
+## ⚠️ DEUDA TÉCNICA CRÍTICA — leer antes de tocar nada ⚠️
+
+**NO uses "Redeploy Stack" desde la UI de Coolify.** Coolify v3 con
+buildPack=compose tiene 3 bugs combinados que rompen Cal.com:
+
+1. Ignora valores literales en `environment:` del yml (solo `${VAR}` del panel)
+2. Strip las labels Traefik del yml (no autogenera para multi-service compose)
+3. Cachea `Application.dockerComposeFile` en BD y no refresca de GitHub
+
+**Si necesitas actualizar Cal.com (versión nueva, env nueva, etc.)**:
+1. Edita `docker-compose.yml` local
+2. `git push` (queda registrado pero NO triggera nada útil)
+3. Ejecuta el script de recreate manual en el VPS:
+
+```bash
+# Desde el VPS root@72.61.195.108
+scp /Users/STARTIDEA/cal-com-hub/scripts/recreate-cal-web.py root@72.61.195.108:/tmp/
+ssh root@72.61.195.108 'docker inspect cmpaiat5n0004qfa4r6m8l8rl-cal-web > /tmp/cal-web-snapshot.json && python3 /tmp/recreate-cal-web.py'
+```
+
+El script:
+- Lee el container actual para preservar env vars y volumes
+- Lo borra
+- Lo recrea con docker run + labels Traefik manuales + labels Coolify
+- Network: `coolify`
+- Healthcheck: `/` (NO `/api/health` que es 404 en v6.2.0)
 
 ## Estado actual
 
-- [x] DNS `cal.hubstartidea.es` → `72.61.195.108` (Hostinger, propagado)
-- [x] `docker-compose.yml` preparado con Cal.com v6.2.0 + Postgres 16 + Redis 7
-- [x] Secrets generados (ver más abajo)
-- [ ] App creada en Coolify
-- [ ] FQDN `cal.hubstartidea.es` configurado en Coolify
-- [ ] Deploy + healthcheck verde
-- [ ] Usuario admin creado (Mario)
+- [x] DNS `cal.hubstartidea.es` → `72.61.195.108` (Hostinger)
+- [x] App Coolify creada (id `cmpaiat5n0004qfa4r6m8l8rl`)
+- [x] 19 secrets cifrados en Coolify BD
+- [x] cal-web LIVE con labels Traefik manuales (workaround)
+- [x] cert Let's Encrypt OK
+- [ ] Admin creado en `/auth/setup` (Mario pendiente)
 - [ ] Test booking end-to-end
+- [ ] Fase 1: POC sala Sócrates
 
 ## Pasos en Coolify (orden estricto)
 
