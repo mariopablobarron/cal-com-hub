@@ -1,0 +1,31 @@
+scripts/recover-cal-stack.sh
+  s_ee13f18e4ec6cb::t_7675d0ea7e6b4b 1-96,99-100
+  s_ee13f18e4ec6cb::t_92fbb8ab48941d 97-98,101
+.env.example
+  s_ee13f18e4ec6cb::t_c38f6fc460785b 27
+  s_ee13f18e4ec6cb::t_00a14d83cb6b9b 1,7-19,22,25-26,28-32,34-37
+README.md
+  s_ee13f18e4ec6cb::t_4e14cf53cebf98 136,138-139,141-146,148
+  s_ee13f18e4ec6cb::t_db11c3b07ca23b 3-4,15-24,49-53,56-60,113,115-117,167-174
+  s_ee13f18e4ec6cb::t_00a14d83cb6b9b 79-82,86-90
+  s_ee13f18e4ec6cb::t_b5f6d6f9a4536d 149-151
+  s_ee13f18e4ec6cb::t_993f2595b4b1e6 46
+  s_ee13f18e4ec6cb::t_92fbb8ab48941d 156-157
+  s_ee13f18e4ec6cb::t_c8c2a26c62b130 61
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "44766c31e290f750c573151eb5b815e00b45e0b5",
+  "prompts": {},
+  "sessions": {
+    "s_ee13f18e4ec6cb": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fb430-3cc6-7a02-b4f8-f01b8e6997fc",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "mariopablobarron <mariopablobarron@users.noreply.github.com>"
+    }
+  }
+}
