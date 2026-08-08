@@ -1,6 +1,7 @@
 # Cal.com self-hosted — HUB Startidea
 
-Fase 0 de la migración: Cal.com **LIVE 2026-05-18** en `cal.hubstartidea.es`.
+Fase 0 de la migración: Cal.com **RECUPERADO 2026-08-08** en
+`cal.hubstartidea.es`, preservando la base de datos existente.
 
 ## ⚠️ DEUDA TÉCNICA CRÍTICA — leer antes de tocar nada ⚠️
 
@@ -11,7 +12,16 @@ buildPack=compose tiene 3 bugs combinados que rompen Cal.com:
 2. Strip las labels Traefik del yml (no autogenera para multi-service compose)
 3. Cachea `Application.dockerComposeFile` en BD y no refresca de GitHub
 
-**Si necesitas actualizar Cal.com (versión nueva, env nueva, etc.)**:
+**Si faltan los tres contenedores pero siguen los volúmenes**, usa
+`scripts/recover-cal-stack.sh`. Valida primero la web en una red interna y solo
+la conecta a Traefik cuando está sana:
+
+```bash
+# El fichero debe contener todos los secretos y tener modo 0600.
+sudo scripts/recover-cal-stack.sh /ruta/segura/cal.env
+```
+
+**Si solo necesitas actualizar cal-web (versión nueva, env nueva, etc.)**:
 1. Edita `docker-compose.yml` local
 2. `git push` (queda registrado pero NO triggera nada útil)
 3. Ejecuta el script de recreate manual en el VPS:
@@ -33,12 +43,21 @@ El script:
 
 - [x] DNS `cal.hubstartidea.es` → `72.61.195.108` (Hostinger)
 - [x] App Coolify creada (id `cmpaiat5n0004qfa4r6m8l8rl`)
-- [x] 19 secrets cifrados en Coolify BD
+- [x] 20 variables de entorno cifradas en Coolify BD, incluida la contraseña SMTP
 - [x] cal-web LIVE con labels Traefik manuales (workaround)
 - [x] cert Let's Encrypt OK
-- [ ] Admin creado en `/auth/setup` (Mario pendiente)
-- [ ] Test booking end-to-end
+- [x] Registro admin existente, onboarding completado y 3 tipos de evento
+- [x] Backup SQL local válido y cron diario confirmado
+- [ ] Verificar manualmente la contraseña de acceso del admin
+- [ ] Test booking end-to-end y entrega de email, con autorización expresa
+- [ ] Conectar Google Calendar con credenciales OAuth dedicadas
 - [ ] Fase 1: POC sala Sócrates
+
+La recuperación previa a los cambios está en
+`/root/cal-recovery-20260808T130500Z` en KVM8: instantánea offline de los dos
+volúmenes, manifiesto SHA-256, configuración anterior para rollback y copia de
+la base de Coolify antes de rotar secretos. El directorio y sus ficheros
+sensibles tienen permisos restrictivos.
 
 ## Pasos en Coolify (orden estricto)
 
@@ -57,15 +76,18 @@ esta carpeta.
 
 ### 3. Setear Environment Variables
 
-En **Environment Variables** de la app, añadir estas 4 (ver valores
-generados en la sección "Secrets" más abajo):
+En **Environment Variables** de la app, añadir el contrato completo de
+`.env.example`. Son 19 variables: tres para PostgreSQL, dos URLs de conexión,
+tres URLs públicas, dos secretos de aplicación, seis de SMTP y tres de runtime.
+Las sensibles deben marcarse como secretas.
 
 | Key | Type |
 |---|---|
-| `NEXTAUTH_SECRET` | Build-time + runtime |
-| `CALENDSO_ENCRYPTION_KEY` | Build-time + runtime |
-| `POSTGRES_PASSWORD` | Build-time + runtime |
-| `RESEND_API_KEY` | Build-time + runtime |
+| `NEXTAUTH_SECRET`, `CALENDSO_ENCRYPTION_KEY` | Secret, runtime |
+| `POSTGRES_PASSWORD` | Secret, runtime |
+| `DATABASE_URL`, `DATABASE_DIRECT_URL` | Secret, runtime |
+| `EMAIL_SERVER_PASSWORD` | Secret, runtime |
+| Resto de `.env.example` | Runtime |
 
 **⚠️ Coolify v3 quoting bug**: si algún valor contiene `<`, `>` o
 espacios, envolver con comillas simples `'...'`. Los que generé no
@@ -88,10 +110,11 @@ Click **Deploy**. Tardará 3-5 minutos:
 4. `prisma migrate deploy` automático al primer arranque de cal-web
 5. Healthcheck verde
 
-### 6. Crear primer usuario admin
+### 6. Crear primer usuario admin (solo instalaciones nuevas)
 
-Visitar `https://cal.hubstartidea.es/auth/setup` — Cal.com lleva un
-wizard de primer-uso que crea el admin.
+Visitar `https://cal.hubstartidea.es/auth/setup` — Cal.com lleva un wizard de
+primer uso que crea el admin. **No repetir este paso en la instalación actual**:
+el registro ya existe y la raíz redirige al login.
 
 - **Email**: mariopablobarron@gmail.com
 - **Username**: `mario` (será tu URL: `cal.hubstartidea.es/mario`)
@@ -110,22 +133,28 @@ unos nuevos para Cal.com en Google Cloud Console.
 Yo recomiendo nuevos credentials (separación de responsabilidades).
 Te lo explico cuando lleguemos a este paso.
 
-## Secrets generados
+## Secrets
 
-**⚠️ NO commitear estos valores. Pegar directamente en Coolify.**
+**⚠️ No guardar valores reales en Git.** Deben vivir únicamente en el gestor de
+secretos de la infraestructura y en el fichero de recuperación `0600` de la VPS.
 
+Generar valores nuevos durante la instalación o una rotación controlada:
+
+```bash
+NEXTAUTH_SECRET="$(openssl rand -hex 32)"
+CALENDSO_ENCRYPTION_KEY="$(openssl rand -hex 16)" # exactamente 32 caracteres
+POSTGRES_PASSWORD="$(openssl rand -hex 24)"
 ```
-NEXTAUTH_SECRET=<retirado>
-CALENDSO_ENCRYPTION_KEY=<retirado>
-POSTGRES_PASSWORD=<retirado>
-RESEND_API_KEY=<copiar del hub-startidea-web Coolify env: re_...>
-```
+
+La API key de Resend debe obtenerse del gestor de secretos; nunca copiarse al
+repo. Cal.com la recibe como `EMAIL_SERVER_PASSWORD` para SMTP, no como una
+variable `RESEND_API_KEY` separada.
 
 ## Verificación tras deploy
 
 ```bash
-# Healthcheck (debe devolver 200)
-curl -I https://cal.hubstartidea.es/api/health
+# La raíz redirige al login cuando ya existe admin; siguiendo el redirect da 200.
+curl -sSL -o /dev/null -w '%{http_code}\n' https://cal.hubstartidea.es/
 
 # Verificar que el HTML carga
 curl -s https://cal.hubstartidea.es | head -20
@@ -135,11 +164,14 @@ curl -s https://cal.hubstartidea.es | head -20
 
 ## Rollback si algo falla
 
-Cal.com es completamente independiente del HUB:
-- Coolify → app `cal-com-hub` → **Stop** o **Delete**
-- DNS: borrar el A record `cal.hubstartidea.es` (vía Hostinger MCP)
-- Volúmenes Docker (`cal-db-data`, `cal-redis-data`) sobreviven a Stop
-  pero se borran al Delete
+Cal.com es completamente independiente del HUB. Para una reversión recuperable:
+
+1. Detener únicamente los tres contenedores `cmpaiat5n0004qfa4r6m8l8rl-cal-*`.
+2. Restaurar configuración y datos desde `/root/cal-recovery-20260808T130500Z`.
+3. No borrar DNS, la app de Coolify ni los volúmenes como parte de un rollback.
+
+**No usar Delete en Coolify**: puede eliminar volúmenes y convertir una
+reversión sencilla en una restauración completa.
 
 El web actual `hubstartidea.es` NO se ve afectado en ningún momento.
 
